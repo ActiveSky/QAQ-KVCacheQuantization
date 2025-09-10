@@ -4,14 +4,14 @@ import json
 import math
 import torch
 from tqdm import tqdm
-from models import CausalLM
 from typing import Optional, Any
 from torch.nn import functional as F
 from functools import cached_property
 from dataclasses import dataclass, asdict
+# User code packages
 from qa_dataset import QADataset, Question
 from quantizer import Quantizer, AttentionType
-
+from models import CausalLM
 
 @dataclass
 class EvaluationResult:
