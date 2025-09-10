@@ -3,3 +3,9 @@
 /data/
 __pycache__/
 .vscode/
+
+#virtural env
+.venv/
+
+#my code test
+# mytest/
