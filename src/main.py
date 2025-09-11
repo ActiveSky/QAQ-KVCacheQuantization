@@ -5,7 +5,9 @@ import experiments as exp
 # os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 os.environ["TOKENIZERS_PARALLELISM"] = "true"
 
-model_name = "meta-llama/Llama-2-7b-hf"
+model_name="/root/.cache/modelscope/hub/models/shakechen/Llama-2-7b-hf"
+# model_name="shakechen/Llama-2-7b-hf"
+# model_name = "meta-llama/Llama-2-7b-hf"
 # model_name = "meta-llama/Llama-2-13b-hf"
 # model_name = "meta-llama/Llama-2-70b-hf"
 # model_name = "facebook/opt-125m"
