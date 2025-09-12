@@ -40,9 +40,11 @@ from functools import cached_property, cache
 from evaluator import Evaluator, EvaluationResult
 from multiprocessing import queues, Queue, Lock, Process
 from accelerate import init_empty_weights, infer_auto_device_map
-from config import version, cache_file, hf_cache_dir, device_configs
+# from config import version, cache_file, hf_cache_dir, device_configs
 from transformers import AutoModelForCausalLM, AutoConfig, AutoTokenizer
 
+import queue
+import config as cfg
 
 class Experiment(abc.ABC):
     def __init__(self, model_name: str, dataset_name: str, dtype: torch.dtype, question_count: int, parallel: bool, verbose: bool):
@@ -67,7 +69,7 @@ class Experiment(abc.ABC):
         self.question_count = question_count
         self.verbose = verbose
         # 动态判断是否启用并行执行
-        self.parallel = parallel and len(self.quantizer_list) > 1 and len(device_configs) > 1
+        self.parallel = parallel and len(self.quantizer_list) > 1 and len(cfg.device_configs) > 1
 
     @cached_property
     def tokenizer(self) -> Tokenizer:
@@ -84,7 +86,7 @@ class Experiment(abc.ABC):
         - 外部：AutoTokenizer.from_pretrained(), hf_cache_dir
         - 内部：被self.datasets()依赖
         """
-        tokenizer = AutoTokenizer.from_pretrained(self.model_name, cache_dir=hf_cache_dir)
+        tokenizer = AutoTokenizer.from_pretrained(self.model_name, cache_dir=cfg.hf_cache_dir)
         tokenizer.pad_token_id = 0
         return tokenizer
 
@@ -112,13 +114,13 @@ class Experiment(abc.ABC):
         - 每个worker_id对应不同的设备配置
         """
         with init_empty_weights():
-            model = AutoModelForCausalLM.from_config(AutoConfig.from_pretrained(self.model_name, cache_dir=hf_cache_dir))
-        _, max_memory = device_configs[worker_id]
+            model = AutoModelForCausalLM.from_config(AutoConfig.from_pretrained(self.model_name, cache_dir=cfg.hf_cache_dir))
+        _, max_memory = cfg.device_configs[worker_id]
         model.tie_weights()
         device_map = infer_auto_device_map(model, max_memory=max_memory, dtype=self.dtype, no_split_module_classes=model._no_split_modules)
         if any(x == "cpu" or x == "disk" for x in device_map.values()):
             print("Warning: CPU offloading enabled!")
-        model = AutoModelForCausalLM.from_pretrained(self.model_name, device_map=device_map, torch_dtype=self.dtype, cache_dir=hf_cache_dir).eval()
+        model = AutoModelForCausalLM.from_pretrained(self.model_name, device_map=device_map, torch_dtype=self.dtype, cache_dir=cfg.hf_cache_dir).eval()
         return model
 
     @cached_property
@@ -228,19 +230,23 @@ class Experiment(abc.ABC):
         - 标识工作进程，用于设备分配
         - 传入get_model()获取对应设备的模型实例
         """
-        idx, key_quantizer, value_quantizer = task_queue.get(timeout=1)
+        
+        
+        task_result: tuple[int, Quantizer, Quantizer] = task_queue.get(timeout=1)
+        idx, key_quantizer, value_quantizer = task_result
+
         print(f"Running evaluation #{idx+1} on worker #{worker_id+1}...")
-        device, _ = device_configs[worker_id]
+        device, _ = cfg.device_configs[worker_id]
         key_quantizer.set_dtype_and_device(self.dtype, device)
         value_quantizer.set_dtype_and_device(self.dtype, device)
-        evaluator = Evaluator(device, version, self.model_name, self.datasets, key_quantizer, value_quantizer)
+        evaluator = Evaluator(device, cfg.version, self.model_name, self.datasets, key_quantizer, value_quantizer)
         with file_lock:
-            result = evaluator.get_cached_result(cache_file)
+            result = evaluator.get_cached_result(cfg.cache_file)
         if result is None:
             model = self.get_model(worker_id)
             result = evaluator.evaluate(model, use_tqdm=True)
             with file_lock:
-                evaluator.cache_result(cache_file, result)
+                evaluator.cache_result(cfg.cache_file, result)
         if self.verbose:
             print(f"  Params: {evaluator.params}")
             print(f"  Results: {asdict(result)}")
@@ -322,7 +328,7 @@ class Experiment(abc.ABC):
             while True:
                 try:
                     self._run_single_evaluation(worker_id, task_queue, file_lock)
-                except queues.Empty:
+                except queue.Empty:
                     break  # 队列为空，任务完成
 
         # Phase 2: 执行模式选择
@@ -333,7 +339,7 @@ class Experiment(abc.ABC):
             
             # 创建多进程worker
             process_list: list[Process] = []
-            for worker_id in range(len(device_configs)):
+            for worker_id in range(len(cfg.device_configs)):
                 process = Process(target=worker, args=(worker_id,))
                 process_list.append(process)
                 process.start()
@@ -349,9 +355,9 @@ class Experiment(abc.ABC):
         results: list[EvaluationResult] = []
         for key_quantizer, value_quantizer in self.quantizer_list:
             # 创建评估器（在CPU上，仅用于缓存读取）
-            evaluator = Evaluator("cpu", version, self.model_name, self.datasets, key_quantizer, value_quantizer)
+            evaluator = Evaluator(torch.device("cpu"), cfg.version, self.model_name, self.datasets, key_quantizer, value_quantizer)
             # 从缓存中读取结果
-            result = evaluator.get_cached_result(cache_file)
+            result = evaluator.get_cached_result(cfg.cache_file)
             assert result is not None, f"Result not found for {evaluator.params}"
             results.append(result)
         
