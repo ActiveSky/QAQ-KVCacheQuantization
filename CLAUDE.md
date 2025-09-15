@@ -70,3 +70,4 @@ The system follows a modular architecture:
 5. **Experiment Layer**: Orchestrates experiments and result processing (`experiments/`)
 
 Experiments are designed to be run in parallel across multiple GPUs, with results automatically cached to avoid recomputation.
+- 回答问题时使用简体中文

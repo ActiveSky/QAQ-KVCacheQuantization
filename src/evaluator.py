@@ -148,7 +148,7 @@ class Evaluator:
         # 计算每对注意力张量的误差并求平均
         return sum(self._calc_tensor_error(attn1, attn2) for attn1, attn2 in zip(attention1, attention2)) / len(attention1)
 
-    # 评估单个问题
+    # 评估单个问题；核心代码
     def _evaluate_single(self, model: CausalLM, question: Question) -> EvaluationResult:
         # 获取问题长度
         question_len = question.question_length
@@ -213,19 +213,19 @@ class Evaluator:
                 max_choice_idx = choice_idx
                 
         # 计算量化指标
-        # 计算键量化误差
+        # 计算键-量化误差
         key_quantization_error = self._calc_tensor_error(key_cache, quantized_key_cache)
         
-        # 计算值量化误差
+        # 计算值-量化误差
         value_quantization_error = self._calc_tensor_error(value_cache, quantized_value_cache)
         
-        # 计算注意力误差
+        # 计算注意力-误差
         attention_error = self._calc_attention_error(
             [attn[:,:,question_len:,:question_len].to(self.device) for attn in result.attentions],
             [attn[:,:,:,:question_len].to(self.device) for attn in quantized_result.attentions],
         )
         
-        # 计算逻辑误差
+        # 计算逻辑-误差
         logit_error = self._calc_tensor_error(result.logits[:,question_len:,:], quantized_result.logits)
         
         # 计算键平均大小
