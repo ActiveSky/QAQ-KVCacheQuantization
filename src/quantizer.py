@@ -282,6 +282,7 @@ class Quantizer:
         # 创建掩码张量，排除异常值
         cache = torch.masked.masked_tensor(cache, torch.logical_not(outlier_mask))
         # NOTE: PyTorch's bug: https://github.com/pytorch/pytorch/issues/115624
+        # 转换为正索引
         quantize_dims = [x + len(cache.shape) for x in self.quantize_dims]
 
         # 根据量化方法计算比特数
