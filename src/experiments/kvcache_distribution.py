@@ -121,7 +121,7 @@ class KVcacheDistribution(Experiment):
         
         # Phase 2: 数据收集
         with torch.no_grad():  # 禁用梯度计算，节省内存
-            for question in tqdm(self.questions):  # 显示处理进度
+            for question in tqdm(self.datasets.questions):  # 显示处理进度
                 length = question.question_length
                 input_ids = question.input_ids[:1,:length].to(device)  # 单个batch
                 

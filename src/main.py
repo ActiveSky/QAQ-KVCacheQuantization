@@ -43,22 +43,22 @@ dtype = torch.float16
 
 # 定义问题数量，控制实验规模
 # 设置为1000个问题进行评估
-question_count = 1000
+question_count = 10
 
 
 # 程序入口点
 if __name__ == "__main__":
     # 运行网格搜索实验（已注释）
     # exp.GridSearch(model_name, dataset_name, dtype, question_count, parallel=True, verbose=True).run()
-    
+
     # 运行键值差异实验（已注释）
-    # exp.KeyValueDifference(model_name, dataset_name, dtype, question_count, parallel=True, verbose=True).run()
-    
+    exp.KeyValueDifference(model_name, dataset_name, dtype, question_count, parallel=True, verbose=True).run()
+
     # 运行KV缓存分布实验（已注释）
     # exp.KVcacheDistribution(model_name, dataset_name, dtype, question_count, parallel=True, verbose=True).run()
-    
+
     # 运行注意力洞察实验（已注释）
     # exp.AttentionInsight(model_name, dataset_name, dtype, question_count, parallel=True, verbose=True).run()
-    
+
     # 运行测试实验（当前启用）
-    exp.Test(model_name, dataset_name, dtype, question_count, parallel=True, verbose=True).run()
+    # exp.Test(model_name, dataset_name, dtype, question_count, parallel=True, verbose=True).run()

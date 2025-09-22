@@ -12,7 +12,7 @@ class AttentionInsight(Experiment):
     def process_result(self, _):
         model = self.get_model(0)
         device = device_configs[0][0]
-        question = self.questions[0]
+        question = self.datasets.questions[0]
         input_ids = question.input_ids[:1].to(device)
         with torch.no_grad():
             attention = model.forward(input_ids, output_attentions=True, return_dict=True).attentions

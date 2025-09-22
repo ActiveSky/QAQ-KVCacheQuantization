@@ -124,18 +124,22 @@ class Experiment(abc.ABC):
             print("Warning: CPU offloading enabled!")
             
         # 设置4位量化配置
+        # quantization_config = BitsAndBytesConfig(
+        #     load_in_4bit=True,  # 启用4位量化
+        #     bnb_4bit_compute_dtype=torch.float16,  # 计算时使用float16
+        #     # bnb_4bit_quant_type="nf4",  # 使用正态浮点数4位量化
+        #     bnb_4bit_use_double_quant=True,  # 启用双重量化以进一步减少内存使用
+        # )
+        #8 bit量化
         quantization_config = BitsAndBytesConfig(
-            load_in_4bit=True,  # 启用4位量化
-            bnb_4bit_compute_dtype=torch.float16,  # 计算时使用float16
-            # bnb_4bit_quant_type="nf4",  # 使用正态浮点数4位量化
-            bnb_4bit_use_double_quant=True,  # 启用双重量化以进一步减少内存使用
+            load_in_8bit=True,  # 启用8位量化
         )
         model = AutoModelForCausalLM.from_pretrained(
             self.model_name, 
             device_map=device_map, 
             torch_dtype=self.dtype, 
             cache_dir=cfg.hf_cache_dir,
-            # quantization_config=quantization_config
+            quantization_config=quantization_config
             ).eval()
         return model
 

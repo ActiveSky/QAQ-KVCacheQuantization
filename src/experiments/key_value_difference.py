@@ -113,7 +113,8 @@ class KeyValueDifference(Experiment):
             "key_or_value_cache": ["key"],                    # 处理Key缓存
             "use_attentions": [False],                      # 非注意力感知
             "method": ["uniform"],                          # 均匀量化
-            "level": ["token", "layer", "head"],          # 三个量化级别
+            # "level": ["token", "layer", "head"],          # 三个量化级别
+            "level": ["token"],                             # my自己测试
             "symmetric": [False],                           # 非对称量化
             "outliers_ratio": [0],                          # 无异常值处理
             "n_bits_uniform": [1, 2, 3, 4, 5, 6, 7, 8],  # 8个位宽测试
@@ -134,7 +135,8 @@ class KeyValueDifference(Experiment):
             "key_or_value_cache": ["value"],                # 处理Value缓存
             "use_attentions": [False],                      # 非注意力感知
             "method": ["uniform"],                          # 均匀量化
-            "level": ["token", "layer", "head"],          # 三个量化级别
+            # "level": ["token", "layer", "head"],          # 三个量化级别
+            "level": ["token"],                             # my自己测试
             "symmetric": [False],                           # 非对称量化
             "outliers_ratio": [0],                          # 无异常值处理
             "n_bits_uniform": [1, 2, 3, 4, 5, 6, 7, 8],  # 8个位宽测试
@@ -246,7 +248,7 @@ class KeyValueDifference(Experiment):
         
         # 图表配置和保存
         plt.legend()           # 显示图例
-        plt.xlabel("# of bits")  # X轴标签
+        plt.xlabel("# of bits")  # X轴标签 
         plt.ylabel("Accuracy")  # Y轴标签
         plt.savefig("figs/key_value_difference.png", dpi=400)  # 高分辨率保存
         print(series)  # 打印数据供调试分析
