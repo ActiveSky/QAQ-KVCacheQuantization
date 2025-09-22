@@ -42,6 +42,8 @@ from multiprocessing import queues, Queue, Lock, Process
 from accelerate import init_empty_weights, infer_auto_device_map
 # from config import version, cache_file, hf_cache_dir, device_configs
 from transformers import AutoModelForCausalLM, AutoConfig, AutoTokenizer
+#加载量化配置
+from transformers import BitsAndBytesConfig
 
 import queue
 import config as cfg
@@ -120,7 +122,21 @@ class Experiment(abc.ABC):
         device_map = infer_auto_device_map(model, max_memory=max_memory, dtype=self.dtype, no_split_module_classes=model._no_split_modules)
         if any(x == "cpu" or x == "disk" for x in device_map.values()):
             print("Warning: CPU offloading enabled!")
-        model = AutoModelForCausalLM.from_pretrained(self.model_name, device_map=device_map, torch_dtype=self.dtype, cache_dir=cfg.hf_cache_dir).eval()
+            
+        # 设置4位量化配置
+        quantization_config = BitsAndBytesConfig(
+            load_in_4bit=True,  # 启用4位量化
+            bnb_4bit_compute_dtype=torch.float16,  # 计算时使用float16
+            # bnb_4bit_quant_type="nf4",  # 使用正态浮点数4位量化
+            bnb_4bit_use_double_quant=True,  # 启用双重量化以进一步减少内存使用
+        )
+        model = AutoModelForCausalLM.from_pretrained(
+            self.model_name, 
+            device_map=device_map, 
+            torch_dtype=self.dtype, 
+            cache_dir=cfg.hf_cache_dir,
+            # quantization_config=quantization_config
+            ).eval()
         return model
 
     @cached_property
